@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>麵茶翻翻樂</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>麵茶翻翻樂</h1>
+        
+        <div class="game-info">
+            <p> <span id="timer">0</span> </p>
+        </div>
+
+        <div id="game-board" class="game-board">
+            </div>
+
+        <button id="restart-btn">重新開始</button>
+
+        <div class="leaderboard">
+            <h2>排行榜</h2>
+            <ol id="leaderboard-list">
+                </ol>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

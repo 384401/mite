@@ -1,0 +1,116 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f0da; /* 這是你要的黃色背景 */
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    text-align: center;
+    max-width: 640px;
+    width: 90%;
+}
+
+.game-info {
+    font-size: 2.5rem; /* 字體變大，你可以根據喜好調整這個數字 */
+    font-weight: bold; /* 加粗 */
+    color: #ffb08f;    /* 你指定的粉橘色 */
+    margin-bottom: 20px;
+    font-family: 'Courier New', Courier, monospace; /* 這種等寬字體在跳動時比較不會抖動 */
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4行 */
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.card {
+    /* 這裡原本是透明的，我們加上背景色，防止圖片載入前是空的 */
+    background-color: #f5f0da; 
+    border-radius: 8px; /* 卡片本身的圓角 */
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.3s;
+    aspect-ratio: 1/1; 
+}
+
+.card.flip {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    border-radius: 8px; /* 這裡也要加上圓角，確保卡片內部內容也切成圓角 */
+    backface-visibility: hidden;
+    overflow: hidden; /* 確保圖片不超出圓角 */
+    display: flex; /* 讓圖片置中 */
+    justify-content: center;
+    align-items: center;
+}
+
+.card-front {
+    transform: rotateY(180deg);
+}
+
+/* 這裡是關鍵！設定圖片的樣式 */
+.card-front img, .card-back img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 縮放圖片以填充整個區域，不變形 */
+    border-radius: 8px; /* 這裡加上你想要的圓角 */
+}
+
+#restart-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #ffb08f; /* 這是你要的按鈕底色 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.3s;
+}
+
+/* 滑鼠滑過按鈕時稍微變深一點點，增加互動感 */
+#restart-btn:hover {
+    background-color: #ff9d75;
+}
+
+.leaderboard {
+    margin-top: 20px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    /* 針對排行榜的列表進行修改 */
+#leaderboard-list {
+    list-style-type: none; /* 這行就是關鍵：去掉預設的數字標號 */
+    padding: 0;           /* 去掉預設的縮排 */
+    margin: 10px 0;
+}
+
+#leaderboard-list li {
+    background: #fff;
+    margin: 5px 0;
+    padding: 8px;
+    border-bottom: 1px solid #eee; /* 加一條淡淡的底線區隔 */
+    color: #555;
+    font-size: 1rem;
+}
+}
+
+@media (max-width: 480px) {
+    .game-board {
+        grid-template-columns: repeat(3, 1fr); /* 手機版改為 3行 */
+        gap: 5px;
+    }
+}
