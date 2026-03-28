@@ -1,58 +1,68 @@
-// 貼上你剛剛得到的部署網址
+// 1. 基本設定
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwObOZmnIZZQjh7XVpnAetjewh8XYUzZn2OrhWbvWPlvcQTZbLEr-QECj7sZU8T8aIFDw/exec";
 
+// 2. 元素引用
 const nameInput = document.getElementById('player-name-input');
 const submitScoreBtn = document.getElementById('submit-score-btn');
-
-// --- 遊戲設定 ---
-const cardsData = [
-    { name: 'cat1', img: 'images/cat1.png' },
-    { name: 'cat2', img: 'images/cat2.png' },
-    { name: 'cat3', img: 'images/cat3.png' },
-    { name: 'cat5', img: 'images/cat5.png' },
-    { name: 'cat6', img: 'images/cat6.png' },
-    { name: 'cat9', img: 'images/cat9.png' },
-];
-
-const cardBackImg = 'images/back.png';
-
-// --- HTML 元素引用 ---
 const gameBoard = document.getElementById('game-board');
 const timerElement = document.getElementById('timer');
 const restartBtn = document.getElementById('restart-btn');
 const leaderboardList = document.getElementById('leaderboard-list');
-
-// --- 彈窗元素引用 ---
 const modal = document.getElementById('custom-modal');
 const modalMessage = document.getElementById('modal-message');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 
+// --- 遊戲設定：大水庫 ---
+const allCatImages = [
+    'images/cat1.png', 'images/cat2.png', 'images/cat3.png', 
+    'images/cat4.png', 'images/cat5.png', 'images/cat6.png',
+    'images/cat7.png', 'images/cat8.png', 'images/cat9.png',
+    'images/cat10.png', 'images/cat11.png', 'images/cat12.png',
+    'images/cat113.png', 'images/cat14.png',// 🚩 你可以在這裡繼續增加無限多張圖片路徑
+];
+
+const cardBackImg = 'images/back.png';
+
 // --- 遊戲狀態變數 ---
+let cardsData = []; // 每次初始化會從大水庫抓取
 let cards = [];
 let hasFlippedCard = false;
 let lockBoard = false;
 let firstCard, secondCard;
 let matchedPairs = 0;
-let totalPairs = cardsData.length;
+let totalPairs = 0; // 改為動態計算
 let timerInterval;
 let milliseconds = 0;
-let startTime; //
+let startTime;
 
 // --- 遊戲初始化 ---
 function initGame() {
+    // 🚩 步驟 1：從大水庫隨機選出 6 張不同的圖片
+    const selectedImages = shuffle([...allCatImages]).slice(0, 6);
+
+    // 🚩 步驟 2：轉換成遊戲需要的格式
+    cardsData = selectedImages.map(imgUrl => {
+        // 從路徑抓出檔名當作 ID (例如 images/cat1.png -> cat1)
+        const name = imgUrl.split('/').pop().split('.').shift();
+        return { name: name, img: imgUrl };
+    });
+
+    totalPairs = cardsData.length;
     cards = [...cardsData, ...cardsData];
-    shuffle(cards);
+    shuffle(cards); 
     renderBoard();
     resetGameState();
     displayLeaderboard();
 }
 
-// --- 洗牌函式 ---
+// --- 洗牌 (升級版：會回傳結果) ---
 function shuffle(array) {
+    if (!array) return [];
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
+    return array; // 🚩 讓它可以被鏈接使用 (例如 shuffle().slice())
 }
 
 // --- 渲染遊戲盤 ---
@@ -86,8 +96,6 @@ function renderBoard() {
 function flipCard() {
     if (lockBoard) return;
     if (this === firstCard) return;
-
-    // --- 新增：防止重複點擊已經配對成功的牌 ---
     if (this.classList.contains('flip')) return;
 
     this.classList.add('flip');
@@ -96,101 +104,71 @@ function flipCard() {
         hasFlippedCard = true;
         firstCard = this;
         startTimer();
-        return;
+    } else {
+        secondCard = this;
+        lockBoard = true; 
+        checkForMatch();
     }
-
-    secondCard = this;
-    // 一旦翻開第二張，立刻鎖定板子，防止玩家點擊第三張
-    lockBoard = true; 
-    checkForMatch();
 }
 
 // --- 檢查是否配對 ---
 function checkForMatch() {
     let isMatch = firstCard.dataset.name === secondCard.dataset.name;
-    
     if (isMatch) {
-        // 配對成功：執行成功邏輯
         disableCards();
     } else {
-        // 配對失敗：執行失敗邏輯
         unflipCards();
     }
-    // 🚩 注意：這裡絕對不能放 matchedPairs++ 或 resetBoard()！
-    // 必須分開寫在下面兩個函式裡，時機才對。
 }
 
 // --- 配對成功 ---
 function disableCards() {
-    // 1. 移除點擊事件，讓這兩張牌不能再被點
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
-    // 2. 只有在這裡才加分
     matchedPairs++;
 
-    // 3. 檢查是否全破
     if (matchedPairs === totalPairs) {
         gameOver();
     }
-    
-    // 4. 立刻重設變數，準備下一對
     resetBoard();
 }
 
 // --- 配對失敗 ---
 function unflipCards() {
-    // 保持 lockBoard = true (這是在 flipCard 那邊設定的)
-    
     setTimeout(() => {
-        // 1. 把牌翻回去
         if (firstCard && secondCard) {
             firstCard.classList.remove('flip');
             secondCard.classList.remove('flip');
         }
-        
-        // 2. 🚩 關鍵：等 350ms 翻回去後，才執行重置與「解鎖」
-        // 這樣玩家在翻牌動畫期間怎麼點都沒用，邏輯才不會亂
         resetBoard(); 
-    }, 350); // 你想改快手感就在這裡調整數字
+    }, 350); 
 }
 
-// --- 重設翻牌狀態 ---
 function resetBoard() {
     [hasFlippedCard, lockBoard] = [false, false];
     [firstCard, secondCard] = [null, null];
 }
 
-// --- 重設遊戲狀態 ---
 function resetGameState() {
     stopTimer();
     milliseconds = 0;
-    startTime = null; // 清空開始時間
+    startTime = null;
     timerElement.textContent = '00:00:00';
     matchedPairs = 0;
 }
 
-// --- 計時器函式 ---
+// --- 計時器 ---
 function startTimer() {
     if (timerInterval) return;
-
-    // 紀錄點擊那一刻的精確時間戳記
     startTime = Date.now(); 
-
     timerInterval = setInterval(() => {
-        // 計算「現在」跟「開始」差了多少毫秒
         let currentTime = Date.now();
         milliseconds = currentTime - startTime; 
-        
         let min = Math.floor(milliseconds / 60000);
         let sec = Math.floor((milliseconds % 60000) / 1000);
         let ms = Math.floor((milliseconds % 1000) / 10);
-
-        let minStr = min.toString().padStart(2, '0');
-        let secStr = sec.toString().padStart(2, '0');
-        let msStr = ms.toString().padStart(2, '0');
-
-        timerElement.textContent = `${minStr}:${secStr}:${msStr}`;
+        timerElement.textContent = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
     }, 10); 
 }
 
@@ -211,108 +189,81 @@ function gameOver() {
     });
 
     setTimeout(() => {
-        // 先詢問朋友的名字
-       modalMessage.textContent = `你花了 ${finalTime} 完成遊戲！`;
-        // 2. 清空輸入框
+        modalMessage.textContent = `你花了 ${finalTime} 完成遊戲！`;
         nameInput.value = "";
-        // 3. 顯示彈窗
         modal.style.display = 'flex';
     }, 500);
 }
 
-// async 代表這是一個非同步函式
+// --- 資料傳輸 ---
 async function uploadScore(name, score) {
     try {
-        // fetch 就是「發送請求」，就像寄信一樣
         const response = await fetch(SCRIPT_URL, {
-            method: "POST", // 使用 POST 方式傳送資料
-            body: JSON.stringify({ name: name, score: score }) // 把資料轉成字串
+            method: "POST",
+            body: JSON.stringify({ name: name, score: score })
         });
-
-        // 等 Google 回傳最新的前 5 名
-        const top10 = await response.json();
-        
-        // 拿到資料後，更新網頁上的排行榜畫面
-        renderLeaderboard(top10);
+        const topData = await response.json();
+        renderLeaderboard(topData);
     } catch (error) {
-        console.error("上傳失敗，請檢查網路或 SCRIPT_URL:", error);
+        console.error("上傳失敗:", error);
     }
 }
 
-// --- 顯示排行榜 ---
 async function displayLeaderboard() {
     try {
-        // 直接 fetch 網址 (預設是 GET)，Google 就會執行 doGet 並回傳前 5 名
         const response = await fetch(SCRIPT_URL);
-        const top10 = await response.json();
-        
-        // 渲染畫面
-        renderLeaderboard(top10);
+        const topData = await response.json();
+        renderLeaderboard(topData);
     } catch (error) {
-        console.log("讀取失敗。");
-        leaderboardList.innerHTML = '<li>尚無記錄</li>';
+        leaderboardList.innerHTML = '<li>讀取失敗</li>';
     }
 }
 
 function renderLeaderboard(data) {
     leaderboardList.innerHTML = ''; 
-
     if (!data || data.length === 0) {
-        leaderboardList.innerHTML = '<li>目前還沒有雲端紀錄，快來搶第一！</li>';
+        leaderboardList.innerHTML = '<li>無資料</li>';
         return;
     }
-
     data.forEach((item, index) => {
         const li = document.createElement('li');
-        li.classList.add('leaderboard-item'); // 增加一個 class 方便寫 CSS
-
-        let medal = "";
-        if (index === 0) medal = "🥇";
-        else if (index === 1) medal = "🥈";
-        else if (index === 2) medal = "🥉";
-        else medal = `${index + 1}.`;
-
-        // 🏆 關鍵：將內容拆開，包裹在不同的 span 裡
+        li.classList.add('leaderboard-item');
+        let medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
         li.innerHTML = `
             <span class="rank">${medal}</span>
             <span class="name">${item[0]}</span>
             <span class="divider">－</span>
             <span class="score">${item[1]}</span>
         `;
-        
         leaderboardList.appendChild(li);
     });
 }
 
+// --- 事件監聽器 ---
 
-// --- 彈窗關閉按鈕 ---
 modalCloseBtn.addEventListener('click', () => {
     modal.style.display = 'none';
+    initGame(); 
 });
 
-// --- 重新開始按鈕 ---
 restartBtn.addEventListener('click', initGame);
 
 submitScoreBtn.addEventListener('click', () => {
-    const playerName = nameInput.value.trim() || "匿名貓友";
+    const playerName = nameInput.value.trim() || "麵茶";
     const finalTime = timerElement.textContent;
 
-    // 1. 執行上傳
     uploadScore(playerName, finalTime);
 
-    // 2. 顯示上傳成功或直接關閉
     submitScoreBtn.textContent = "上傳中...";
     submitScoreBtn.disabled = true;
 
     setTimeout(() => {
-        modal.style.display = 'none'; // 關閉彈窗
+        modal.style.display = 'none';
         submitScoreBtn.textContent = "紀錄成績";
         submitScoreBtn.disabled = false;
-        
-        // 額外：上傳完自動洗牌重新開始，手感會更好
         initGame(); 
     }, 800);
 });
 
-// --- 啟動遊戲 ---
+// --- 啟動 ---
 initGame();
