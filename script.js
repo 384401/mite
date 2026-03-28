@@ -1,7 +1,8 @@
 // 貼上你剛剛得到的部署網址
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwObOZmnIZZQjh7XVpnAetjewh8XYUzZn2OrhWbvWPlvcQTZbLEr-QECj7sZU8T8aIFDw/exec";
 
-
+const nameInput = document.getElementById('player-name-input');
+const submitScoreBtn = document.getElementById('submit-score-btn');
 
 // --- 遊戲設定 ---
 const cardsData = [
@@ -211,13 +212,11 @@ function gameOver() {
 
     setTimeout(() => {
         // 先詢問朋友的名字
-        const playerName = prompt("輸入大名：", "麵茶") || "麵茶";
-        
-        modalMessage.textContent = `${playerName}，你花了 ${finalTime} 完成遊戲！`;
+       modalMessage.textContent = `你花了 ${finalTime} 完成遊戲！`;
+        // 2. 清空輸入框
+        nameInput.value = "";
+        // 3. 顯示彈窗
         modal.style.display = 'flex';
-        
-        // 送出成績並重新抓取排行榜
-        uploadScore(playerName, finalTime);
     }, 500);
 }
 
@@ -293,6 +292,27 @@ modalCloseBtn.addEventListener('click', () => {
 
 // --- 重新開始按鈕 ---
 restartBtn.addEventListener('click', initGame);
+
+submitScoreBtn.addEventListener('click', () => {
+    const playerName = nameInput.value.trim() || "匿名貓友";
+    const finalTime = timerElement.textContent;
+
+    // 1. 執行上傳
+    uploadScore(playerName, finalTime);
+
+    // 2. 顯示上傳成功或直接關閉
+    submitScoreBtn.textContent = "上傳中...";
+    submitScoreBtn.disabled = true;
+
+    setTimeout(() => {
+        modal.style.display = 'none'; // 關閉彈窗
+        submitScoreBtn.textContent = "紀錄成績";
+        submitScoreBtn.disabled = false;
+        
+        // 額外：上傳完自動洗牌重新開始，手感會更好
+        initGame(); 
+    }, 800);
+});
 
 // --- 啟動遊戲 ---
 initGame();

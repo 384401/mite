@@ -209,3 +209,52 @@ body {
     border-radius: 5px;
     cursor: pointer;
 }
+
+/* --- 彈窗內的輸入框與送出按鈕美化 --- */
+
+/* 讓輸入框跟按鈕有一點間距 */
+.input-container {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* 讓輸入框跟按鈕不要黏在一起 */
+    align-items: center; /* 讓它們在彈窗中位置居中 */
+}
+
+/* 名字輸入框樣式 */
+#player-name-input {
+    padding: 12px;
+    width: 80%; /* 不要撐滿整個彈窗，留一點呼吸空間 */
+    border: 2px solid #ff7e5f; /* 使用你遊戲的主題色 */
+    border-radius: 10px;
+    font-size: 16px;
+    text-align: center;
+    outline: none; /* 點擊時不要出現預設的醜醜黑框 */
+    transition: border-color 0.3s;
+}
+
+#player-name-input:focus {
+    border-color: #feb47b; /* 點擊輸入時稍微變色 */
+}
+
+/* 紀錄成績按鈕樣式 */
+#submit-score-btn {
+    background: linear-gradient(45deg, #ff7e5f, #feb47b);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px; /* 圓角看起來更平易近人 */
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);
+    transition: transform 0.2s, background 0.3s;
+}
+
+#submit-score-btn:hover {
+    transform: scale(1.05); /* 滑鼠移上去微調大小，增加互動感 */
+}
+
+#submit-score-btn:disabled {
+    background: #ccc; /* 上傳中禁用按鈕，顏色變灰 */
+    cursor: not-allowed;
+}
