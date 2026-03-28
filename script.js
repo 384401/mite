@@ -86,6 +86,9 @@ function flipCard() {
     if (lockBoard) return;
     if (this === firstCard) return;
 
+    // --- 新增：防止重複點擊已經配對成功的牌 ---
+    if (this.classList.contains('flip')) return;
+
     this.classList.add('flip');
 
     if (!hasFlippedCard) {
@@ -96,39 +99,59 @@ function flipCard() {
     }
 
     secondCard = this;
+    // 一旦翻開第二張，立刻鎖定板子，防止玩家點擊第三張
+    lockBoard = true; 
     checkForMatch();
 }
 
 // --- 檢查是否配對 ---
 function checkForMatch() {
     let isMatch = firstCard.dataset.name === secondCard.dataset.name;
+    
     if (isMatch) {
+        // 配對成功：執行成功邏輯
         disableCards();
     } else {
+        // 配對失敗：執行失敗邏輯
         unflipCards();
     }
+    // 🚩 注意：這裡絕對不能放 matchedPairs++ 或 resetBoard()！
+    // 必須分開寫在下面兩個函式裡，時機才對。
 }
 
 // --- 配對成功 ---
 function disableCards() {
+    // 1. 移除點擊事件，讓這兩張牌不能再被點
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
+    
+    // 2. 只有在這裡才加分
     matchedPairs++;
 
+    // 3. 檢查是否全破
     if (matchedPairs === totalPairs) {
         gameOver();
     }
+    
+    // 4. 立刻重設變數，準備下一對
     resetBoard();
 }
 
 // --- 配對失敗 ---
 function unflipCards() {
-    lockBoard = true;
+    // 保持 lockBoard = true (這是在 flipCard 那邊設定的)
+    
     setTimeout(() => {
-        firstCard.classList.remove('flip');
-        secondCard.classList.remove('flip');
-        resetBoard();
-    }, 500);
+        // 1. 把牌翻回去
+        if (firstCard && secondCard) {
+            firstCard.classList.remove('flip');
+            secondCard.classList.remove('flip');
+        }
+        
+        // 2. 🚩 關鍵：等 350ms 翻回去後，才執行重置與「解鎖」
+        // 這樣玩家在翻牌動畫期間怎麼點都沒用，邏輯才不會亂
+        resetBoard(); 
+    }, 350); // 你想改快手感就在這裡調整數字
 }
 
 // --- 重設翻牌狀態 ---
