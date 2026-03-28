@@ -1,3 +1,8 @@
+// 貼上你剛剛得到的部署網址
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwObOZmnIZZQjh7XVpnAetjewh8XYUzZn2OrhWbvWPlvcQTZbLEr-QECj7sZU8T8aIFDw/exec";
+
+
+
 // --- 遊戲設定 ---
 const cardsData = [
     { name: 'cat1', img: 'images/cat1.png' },
@@ -30,6 +35,7 @@ let matchedPairs = 0;
 let totalPairs = cardsData.length;
 let timerInterval;
 let milliseconds = 0;
+let startTime; //
 
 // --- 遊戲初始化 ---
 function initGame() {
@@ -135,6 +141,7 @@ function resetBoard() {
 function resetGameState() {
     stopTimer();
     milliseconds = 0;
+    startTime = null; // 清空開始時間
     timerElement.textContent = '00:00:00';
     matchedPairs = 0;
 }
@@ -142,8 +149,15 @@ function resetGameState() {
 // --- 計時器函式 ---
 function startTimer() {
     if (timerInterval) return;
+
+    // 紀錄點擊那一刻的精確時間戳記
+    startTime = Date.now(); 
+
     timerInterval = setInterval(() => {
-        milliseconds += 10;
+        // 計算「現在」跟「開始」差了多少毫秒
+        let currentTime = Date.now();
+        milliseconds = currentTime - startTime; 
+        
         let min = Math.floor(milliseconds / 60000);
         let sec = Math.floor((milliseconds % 60000) / 1000);
         let ms = Math.floor((milliseconds % 1000) / 10);
@@ -153,7 +167,7 @@ function startTimer() {
         let msStr = ms.toString().padStart(2, '0');
 
         timerElement.textContent = `${minStr}:${secStr}:${msStr}`;
-    }, 10);
+    }, 10); 
 }
 
 function stopTimer() {
@@ -172,38 +186,82 @@ function gameOver() {
         origin: { y: 0.6 }
     });
 
-    // 改用自訂彈窗
     setTimeout(() => {
-        modalMessage.textContent = `你花了 ${finalTime} 完成遊戲！`;
+        // 先詢問朋友的名字
+        const playerName = prompt("輸入大名：", "麵茶") || "麵茶";
+        
+        modalMessage.textContent = `${playerName}，你花了 ${finalTime} 完成遊戲！`;
         modal.style.display = 'flex';
-        saveScore(finalTime);
-        displayLeaderboard();
+        
+        // 送出成績並重新抓取排行榜
+        uploadScore(playerName, finalTime);
     }, 500);
 }
 
-// --- 保存分數 ---
-function saveScore(score) {
-    let leaderboard = JSON.parse(localStorage.getItem('catLeaderboard')) || [];
-    leaderboard.push(score);
-    leaderboard.sort(); // 時間格式字串可以直接排序
-    leaderboard = leaderboard.slice(0, 5);
-    localStorage.setItem('catLeaderboard', JSON.stringify(leaderboard));
+// async 代表這是一個非同步函式
+async function uploadScore(name, score) {
+    try {
+        // fetch 就是「發送請求」，就像寄信一樣
+        const response = await fetch(SCRIPT_URL, {
+            method: "POST", // 使用 POST 方式傳送資料
+            body: JSON.stringify({ name: name, score: score }) // 把資料轉成字串
+        });
+
+        // 等 Google 回傳最新的前 5 名
+        const top10 = await response.json();
+        
+        // 拿到資料後，更新網頁上的排行榜畫面
+        renderLeaderboard(top10);
+    } catch (error) {
+        console.error("上傳失敗，請檢查網路或 SCRIPT_URL:", error);
+    }
 }
 
 // --- 顯示排行榜 ---
-function displayLeaderboard() {
-    const leaderboard = JSON.parse(localStorage.getItem('catLeaderboard')) || [];
-    leaderboardList.innerHTML = '';
-    if (leaderboard.length === 0) {
+async function displayLeaderboard() {
+    try {
+        // 直接 fetch 網址 (預設是 GET)，Google 就會執行 doGet 並回傳前 5 名
+        const response = await fetch(SCRIPT_URL);
+        const top10 = await response.json();
+        
+        // 渲染畫面
+        renderLeaderboard(top10);
+    } catch (error) {
+        console.log("讀取失敗。");
         leaderboardList.innerHTML = '<li>尚無記錄</li>';
-    } else {
-        leaderboard.forEach((score, index) => {
-            const li = document.createElement('li');
-            li.textContent = `第 ${index + 1} 名: ${score}`;
-            leaderboardList.appendChild(li);
-        });
     }
 }
+
+function renderLeaderboard(data) {
+    leaderboardList.innerHTML = ''; 
+
+    if (!data || data.length === 0) {
+        leaderboardList.innerHTML = '<li>目前還沒有雲端紀錄，快來搶第一！</li>';
+        return;
+    }
+
+    data.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.classList.add('leaderboard-item'); // 增加一個 class 方便寫 CSS
+
+        let medal = "";
+        if (index === 0) medal = "🥇";
+        else if (index === 1) medal = "🥈";
+        else if (index === 2) medal = "🥉";
+        else medal = `${index + 1}.`;
+
+        // 🏆 關鍵：將內容拆開，包裹在不同的 span 裡
+        li.innerHTML = `
+            <span class="rank">${medal}</span>
+            <span class="name">${item[0]}</span>
+            <span class="divider">－</span>
+            <span class="score">${item[1]}</span>
+        `;
+        
+        leaderboardList.appendChild(li);
+    });
+}
+
 
 // --- 彈窗關閉按鈕 ---
 modalCloseBtn.addEventListener('click', () => {

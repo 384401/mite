@@ -92,9 +92,10 @@ body {
 
 /* 這裡原本被包在 .leaderboard 裡面，現在幫你移出來了 */
 #leaderboard-list {
-    list-style-type: none;
+    max-height: 300px; /* 設定最大高度 */
+    overflow-y: auto;  /* 超過高度時顯示捲軸 */
     padding: 0;
-    margin: 10px 0;
+    list-style: none;
 }
 
 #leaderboard-list li {
@@ -111,6 +112,59 @@ body {
         grid-template-columns: repeat(3, 1fr);
         gap: 5px;
     }
+}
+
+/* 排行榜外層清單 */
+#leaderboard-list {
+    list-style: none;
+    padding: 0;
+    max-width: 400px; /* 依照你的版面調整 */
+    margin: 0 auto;   /* 讓整個清單置中 */
+}
+
+/* 每一列的佈局 */
+.leaderboard-item {
+    display: grid;
+    /* 定義四個軌道：序號(固定寬), 名字(自動撐開), 符號(固定), 時間(固定) */
+    grid-template-columns: 40px 1fr 30px 100px; 
+    align-items: center; /* 垂直置中 */
+    background: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+    padding: 10px 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    text-align: left; /* 改回靠左，由網格控制對齊 */
+}
+
+/* 序號樣式 */
+.rank {
+    font-weight: bold;
+    color: #888;
+    text-align: center;
+}
+
+/* 名字樣式 (最重要) */
+.name {
+    padding-left: 10px;
+    color: #333;
+    /* 如果名字太長，自動截斷顯示 ... */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+}
+
+/* 分隔符號 */
+.divider {
+    color: #ccc;
+    text-align: center;
+}
+
+/* 時間樣式 */
+.score {
+    font-family: 'Courier New', Courier, monospace; /* 使用等寬字體 */
+    color: #ff7e5f;
+    font-weight: bold;
+    text-align: right; /* 時間靠右對齊，會非常整齊 */
 }
 
 /* --- 彈窗相關樣式 --- */
